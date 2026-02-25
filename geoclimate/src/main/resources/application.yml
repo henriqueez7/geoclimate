@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: geoclimate
+
+server:
+  port: ${PORT:8080}
+
+weather:
+  api:
+    url: https://api.openweathermap.org/data/2.5/weather
+    key: f53311d0927dd85dd53e57ea471472f9
+
+
+

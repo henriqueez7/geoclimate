@@ -1,0 +1,150 @@
+:root {
+    --bg-day: linear-gradient(135deg, #e0f2fe, #bae6fd);
+    --bg-night: linear-gradient(135deg, #020617, #020617);
+    --card-bg: rgba(255, 255, 255, 0.15);
+    --text-light: #f8fafc;
+    --text-dark: #0f172a;
+    --transition: all 0.4s ease;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+body.day {
+    background: var(--bg-day);
+    color: var(--text-dark);
+}
+
+body.night {
+    background: var(--bg-night);
+    color: var(--text-light);
+}
+
+.container {
+    position: relative;
+    width: 360px;
+    padding: 30px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    text-align: center;
+    z-index: 2;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.search-box {
+    display: flex;
+    margin-top: 20px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px 0 0 8px;
+    border: none;
+    outline: none;
+}
+
+.search-box button {
+    padding: 10px 15px;
+    border-radius: 0 8px 8px 0;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.search-box button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.result {
+    margin-top: 25px;
+}
+
+.address {
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+.clima p {
+    margin: 6px 0;
+}
+
+.error {
+    margin-top: 15px;
+    color: #f87171;
+    font-weight: 600;
+}
+
+.hidden {
+    display: none;
+}
+
+.sun {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle at 30% 30%, #fff9c4, #facc15);
+    border-radius: 50%;
+    box-shadow: 0 0 60px rgba(250, 204, 21, 0.8);
+    opacity: 0;
+}
+
+body.day .sun {
+    opacity: 1;
+}
+
+.moon {
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle at 30% 30%, #f1f5f9, #94a3b8);
+    border-radius: 50%;
+    box-shadow: inset -10px -10px 0 rgba(0,0,0,0.2);
+    opacity: 0;
+}
+
+body.night .moon {
+    opacity: 1;
+}
+
+.loader {
+    margin: 25px auto;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
