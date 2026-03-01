@@ -44,7 +44,7 @@ class GeoClimateControllerTest {
         when(geoClimateService.buscarEnderecoEClimaPorCep("01001000"))
                 .thenReturn(response);
 
-        mockMvc.perform(get("/geoclimate/01001000"))
+        mockMvc.perform(get("/api/geoclimate/01001000"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cidade").value("São Paulo"))
                 .andExpect(jsonPath("$.estado").value("SP"))
