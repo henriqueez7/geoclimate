@@ -1,0 +1,1 @@
+![CI](https://github.com/henriqueez7/geoclimate/actions/workflows/ci.yml/badge.svg)
