@@ -8,11 +8,15 @@ import com.henrique.geoclimate.dto.WeatherResponse;
 import com.henrique.geoclimate.exception.CepInvalidoException;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Service
 public class GeoClimateService {
 
     private final ViaCepClient viaCepClient;
     private final WeatherClient weatherClient;
+    private final Map<String, GeoClimateResponse> cache = new ConcurrentHashMap<>();
 
     public GeoClimateService(
             ViaCepClient viaCepClient,
@@ -24,8 +28,10 @@ public class GeoClimateService {
 
     public GeoClimateResponse buscarEnderecoEClimaPorCep(String cep) {
 
-        if (cep == null || !cep.matches("\\d{8}")) {
-            throw new CepInvalidoException("CEP deve conter exatamente 8 dígitos numéricos.");
+        validarCep(cep);
+
+        if (cache.containsKey(cep)) {
+            return cache.get(cep);
         }
 
         EnderecoResponse endereco = viaCepClient.buscarEndereco(cep);
@@ -35,7 +41,7 @@ public class GeoClimateService {
                 endereco.getUf()
         );
 
-        return new GeoClimateResponse(
+        GeoClimateResponse response = new GeoClimateResponse(
                 endereco.getCep(),
                 endereco.getLocalidade(),
                 endereco.getUf(),
@@ -43,5 +49,17 @@ public class GeoClimateService {
                 endereco.getBairro(),
                 clima
         );
+
+        cache.put(cep, response);
+
+        return response;
+    }
+
+    private void validarCep(String cep) {
+        if (cep == null || !cep.matches("\\d{8}")) {
+            throw new CepInvalidoException(
+                    "CEP deve conter exatamente 8 dígitos numéricos."
+            );
+        }
     }
 }
