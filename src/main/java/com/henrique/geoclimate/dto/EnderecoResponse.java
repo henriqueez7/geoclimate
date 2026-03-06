@@ -11,6 +11,9 @@ public class EnderecoResponse {
     private String localidade;
     private String uf;
 
+    // 👇 Campo que o ViaCep retorna quando o CEP não existe
+    private Boolean erro;
+
     public String getCep() {
         return cep;
     }
@@ -29,5 +32,9 @@ public class EnderecoResponse {
 
     public String getUf() {
         return uf;
+    }
+
+    public Boolean getErro() {
+        return erro;
     }
 }

@@ -6,8 +6,13 @@ import com.henrique.geoclimate.dto.EnderecoResponse;
 import com.henrique.geoclimate.dto.GeoClimateResponse;
 import com.henrique.geoclimate.dto.WeatherResponse;
 import com.henrique.geoclimate.exception.CepInvalidoException;
+import com.henrique.geoclimate.exception.CepNotFoundException;
+import com.henrique.geoclimate.model.Consulta;
+import com.henrique.geoclimate.repository.ConsultaRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,14 +21,18 @@ public class GeoClimateService {
 
     private final ViaCepClient viaCepClient;
     private final WeatherClient weatherClient;
+    private final ConsultaRepository consultaRepository;
+
     private final Map<String, GeoClimateResponse> cache = new ConcurrentHashMap<>();
 
     public GeoClimateService(
             ViaCepClient viaCepClient,
-            WeatherClient weatherClient
+            WeatherClient weatherClient,
+            ConsultaRepository consultaRepository
     ) {
         this.viaCepClient = viaCepClient;
         this.weatherClient = weatherClient;
+        this.consultaRepository = consultaRepository;
     }
 
     public GeoClimateResponse buscarEnderecoEClimaPorCep(String cep) {
@@ -35,6 +44,10 @@ public class GeoClimateService {
         }
 
         EnderecoResponse endereco = viaCepClient.buscarEndereco(cep);
+
+        if (endereco == null || Boolean.TRUE.equals(endereco.getErro())) {
+            throw new CepNotFoundException("CEP não encontrado: " + cep);
+        }
 
         WeatherResponse clima = weatherClient.buscarClima(
                 endereco.getLocalidade(),
@@ -50,6 +63,17 @@ public class GeoClimateService {
                 clima
         );
 
+        Consulta consulta = new Consulta(
+                endereco.getCep(),
+                endereco.getLocalidade(),
+                endereco.getUf(),
+                clima.temperatura(),
+                clima.descricao(),
+                LocalDateTime.now()
+        );
+
+        consultaRepository.save(consulta);
+
         cache.put(cep, response);
 
         return response;
@@ -61,5 +85,9 @@ public class GeoClimateService {
                     "CEP deve conter exatamente 8 dígitos numéricos."
             );
         }
+    }
+
+    public List<Consulta> listarHistorico() {
+        return consultaRepository.findAllByOrderByDataConsultaDesc();
     }
 }

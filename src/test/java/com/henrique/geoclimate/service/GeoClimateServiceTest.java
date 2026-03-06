@@ -6,6 +6,7 @@ import com.henrique.geoclimate.dto.EnderecoResponse;
 import com.henrique.geoclimate.dto.GeoClimateResponse;
 import com.henrique.geoclimate.dto.WeatherResponse;
 import com.henrique.geoclimate.exception.CepInvalidoException;
+import com.henrique.geoclimate.repository.ConsultaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,13 +17,21 @@ class GeoClimateServiceTest {
 
     private ViaCepClient viaCepClient;
     private WeatherClient weatherClient;
+    private ConsultaRepository consultaRepository;
     private GeoClimateService geoClimateService;
 
     @BeforeEach
     void setup() {
+
         viaCepClient = mock(ViaCepClient.class);
         weatherClient = mock(WeatherClient.class);
-        geoClimateService = new GeoClimateService(viaCepClient, weatherClient);
+        consultaRepository = mock(ConsultaRepository.class);
+
+        geoClimateService = new GeoClimateService(
+                viaCepClient,
+                weatherClient,
+                consultaRepository
+        );
     }
 
     @Test
@@ -81,6 +90,8 @@ class GeoClimateServiceTest {
         when(enderecoMock.getCep()).thenReturn(cep);
         when(enderecoMock.getLocalidade()).thenReturn("São Paulo");
         when(enderecoMock.getUf()).thenReturn("SP");
+        when(enderecoMock.getLogradouro()).thenReturn("Praça da Sé");
+        when(enderecoMock.getBairro()).thenReturn("Sé");
 
         WeatherResponse climaMock = new WeatherResponse(
                 25.0,
