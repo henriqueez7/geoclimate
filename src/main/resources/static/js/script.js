@@ -194,40 +194,36 @@ document.body.classList.add("dark");
 
 function usarLocalizacao() {
 
-if (!navigator.geolocation) {
-alert("Geolocalização não suportada");
-return;
-}
+    if (!navigator.geolocation) {
+        alert("Geolocalização não suportada");
+        return;
+    }
 
-navigator.geolocation.getCurrentPosition(async (pos) => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
 
-const lat = pos.coords.latitude;
-const lon = pos.coords.longitude;
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
 
-try {
+        try {
 
-const res = await fetch(`/api/geoclimate/coordenadas?lat=${lat}&lon=${lon}`);
+            const res = await fetch(`/api/geoclimate/coordenadas?lat=${lat}&lon=${lon}`);
 
-if (!res.ok) {
-throw new Error("Erro ao buscar clima");
-}
+            if (!res.ok) {
+                throw new Error("Erro na API");
+            }
 
-const data = await res.json();
+            const data = await res.json();
 
-if (!data || !data.clima) {
-throw new Error("Resposta inválida da API");
-}
+            preencherDados(data);
 
-preencherDados(data);
+        } catch (err) {
 
-} catch (err) {
+            alert("Erro ao buscar clima da localização");
+            console.error(err);
 
-console.error(err);
-alert("Erro ao buscar clima da localização");
+        }
 
-}
-
-});
+    });
 
 }
 
