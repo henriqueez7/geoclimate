@@ -221,6 +221,7 @@ function usarLocalizacao() {
             alert("Erro ao buscar clima da localização");
             console.error(err);
 
+
         }
 
     });
