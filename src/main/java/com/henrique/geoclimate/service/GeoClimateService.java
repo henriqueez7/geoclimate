@@ -10,6 +10,7 @@ import com.henrique.geoclimate.exception.CepNotFoundException;
 import com.henrique.geoclimate.model.Consulta;
 import com.henrique.geoclimate.repository.ConsultaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -88,6 +89,57 @@ public class GeoClimateService {
     }
 
     public List<Consulta> listarHistorico() {
-        return consultaRepository.findAllByOrderByDataConsultaDesc();
+        return consultaRepository.findAllByOrderByDataHoraDesc();
     }
+
+    public GeoClimateResponse buscarClimaPorCoordenadas(double lat, double lon) {
+
+        WeatherResponse clima = weatherClient.buscarClimaPorCoordenadas(lat, lon);
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        String url = "https://nominatim.openstreetmap.org/reverse?format=json&lat="
+                + lat + "&lon=" + lon + "&addressdetails=1";
+
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.set("User-Agent", "GeoClimateApp/1.0");
+
+        org.springframework.http.HttpEntity<String> entity =
+                new org.springframework.http.HttpEntity<>(headers);
+
+        org.springframework.http.ResponseEntity<Map> response =
+                restTemplate.exchange(
+                        url,
+                        org.springframework.http.HttpMethod.GET,
+                        entity,
+                        Map.class
+                );
+
+        Map body = response.getBody();
+        Map address = (Map) body.get("address");
+
+        String cidade = address.getOrDefault("city",
+                address.getOrDefault("town",
+                        address.getOrDefault("village", "Cidade não encontrada")
+                )
+        ).toString();
+
+        String estado = address.getOrDefault("state", "").toString();
+        String bairro = address.getOrDefault("suburb", "Bairro não informado").toString();
+        String rua = address.getOrDefault("road", "Rua não informada").toString();
+
+        return new GeoClimateResponse(
+                "",
+                cidade,
+                estado,
+                rua,
+                bairro,
+                clima
+        );
+    }
+
+    public void limparHistorico() {
+        consultaRepository.deleteAll();
+    }
+
 }

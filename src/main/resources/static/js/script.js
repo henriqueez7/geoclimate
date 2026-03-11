@@ -1,89 +1,240 @@
-aplicarTemaPorHorario();
+console.log("JS carregado");
 
 async function buscarCep() {
-    const cepInput = document.getElementById("cepInput");
-    const cep = cepInput.value.replace(/\D/g, "");
-    const erroEl = document.getElementById("erro");
-    const resultadoEl = document.getElementById("resultado");
-    const loader = document.getElementById("loader");
-    const btn = document.getElementById("buscarBtn");
 
-    erroEl.classList.add("hidden");
-    resultadoEl.classList.add("hidden");
+const cep = document.getElementById("cepInput").value;
 
-    if (cep.length !== 8) {
-        erroEl.textContent = "Digite um CEP válido com 8 números.";
-        erroEl.classList.remove("hidden");
-        return;
-    }
+const resultado = document.getElementById("resultado");
+const erro = document.getElementById("erro");
+const loader = document.getElementById("loader");
 
-    loader.classList.remove("hidden");
-    btn.disabled = true;
+erro.classList.add("hidden");
+resultado.classList.add("hidden");
 
-    try {
-        const response = await fetch(`/api/geoclimate/${cep}`);
+if (!cep || cep.length !== 8) {
 
-        if (!response.ok) {
-            throw new Error();
-        }
+erro.textContent = "Digite um CEP válido com 8 números";
+erro.classList.remove("hidden");
+return;
 
-        const data = await response.json();
-        preencherDados(data);
-        aplicarEfeitoClima(data.clima.descricao);
-
-    } catch {
-        erroEl.textContent = "Erro ao buscar informações.";
-        erroEl.classList.remove("hidden");
-    } finally {
-        loader.classList.add("hidden");
-        btn.disabled = false;
-    }
 }
 
-function preencherDados(data) {
-    document.getElementById("cidade").textContent =
-        `${data.cidade} - ${data.estado}`;
+loader.classList.remove("hidden");
 
-    document.getElementById("rua").textContent =
-        data.logradouro || "Rua não informada";
+try {
 
-    document.getElementById("bairro").textContent =
-        data.bairro || "Bairro não informado";
+const response = await fetch(`/api/geoclimate/${cep}`);
 
-    document.getElementById("temperatura").textContent =
-        data.clima.temperatura.toFixed(1);
-
-    document.getElementById("descricao").textContent =
-        data.clima.descricao;
-
-    document.getElementById("umidade").textContent =
-        data.clima.umidade;
-
-    document.getElementById("resultado").classList.remove("hidden");
+if (!response.ok) {
+throw new Error("Erro na API");
 }
 
-function aplicarTemaPorHorario() {
-    const hora = new Date().getHours();
-    document.body.classList.remove("day", "night");
+const data = await response.json();
 
-    if (hora >= 6 && hora < 18) {
-        document.body.classList.add("day");
-    } else {
-        document.body.classList.add("night");
-    }
+if (!data || !data.clima) {
+throw new Error("Resposta inválida da API");
 }
 
-function aplicarEfeitoClima(descricao) {
-    const body = document.body;
-    body.classList.remove("rain", "cloudy", "clear");
+preencherDados(data);
 
-    const d = descricao.toLowerCase();
+carregarHistorico();
 
-    if (d.includes("chuva")) {
-        body.classList.add("rain");
-    } else if (d.includes("nuvem") || d.includes("nublado")) {
-        body.classList.add("cloudy");
-    } else {
-        body.classList.add("clear");
-    }
+} catch (e) {
+
+console.error(e);
+
+erro.textContent = "Erro ao buscar CEP";
+erro.classList.remove("hidden");
+
+} finally {
+
+loader.classList.add("hidden");
+
 }
+
+}
+
+
+function preencherDados(data){
+
+const descricaoClima = data.clima.descricao
+? data.clima.descricao.toLowerCase()
+: "";
+
+let emoji = "🌤";
+
+if (descricaoClima.includes("chuva")) emoji = "🌧";
+else if (descricaoClima.includes("nuvem")) emoji = "☁";
+else if (descricaoClima.includes("sol")) emoji = "☀";
+
+document.getElementById("cidade").textContent =
+`${emoji} ${data.cidade || "Cidade desconhecida"} - ${data.estado || ""}`;
+
+document.getElementById("rua").textContent =
+data.logradouro || "Rua não informada";
+
+document.getElementById("bairro").textContent =
+data.bairro || "Bairro não informado";
+
+document.getElementById("temperatura").textContent =
+data.clima.temperatura ?? "--";
+
+document.getElementById("descricao").textContent =
+data.clima.descricao ?? "--";
+
+document.getElementById("umidade").textContent =
+data.clima.umidade ?? "--";
+
+if(data.clima.icone){
+
+document.getElementById("iconeClima").src =
+`https://openweathermap.org/img/wn/${data.clima.icone}@2x.png`;
+
+}
+
+document.getElementById("resultado").classList.remove("hidden");
+
+}
+
+async function carregarHistorico() {
+
+const tabela = document.getElementById("historico");
+const contador = document.getElementById("contador");
+
+if (!tabela) return;
+
+tabela.innerHTML = "";
+
+try {
+
+const response = await fetch("/api/geoclimate/historico");
+
+if (!response.ok) return;
+
+const data = await response.json();
+
+contador.textContent = data.length;
+
+if (data.length === 0) {
+
+const tr = document.createElement("tr");
+
+tr.innerHTML = `
+<td colspan="3">Nenhuma consulta feita ainda</td>
+`;
+
+tabela.appendChild(tr);
+return;
+
+}
+
+data.forEach(c => {
+
+const tr = document.createElement("tr");
+
+tr.innerHTML = `
+<td>${c.cep}</td>
+<td>${c.cidade}</td>
+<td>${c.estado}</td>
+`;
+
+tabela.appendChild(tr);
+
+});
+
+} catch (e) {
+
+console.error("Erro ao carregar histórico", e);
+
+}
+
+}
+
+async function limparHistorico() {
+
+const confirmar = confirm("Deseja realmente apagar o histórico?");
+
+if (!confirmar) return;
+
+try {
+
+await fetch("/api/geoclimate/historico", {
+method: "DELETE"
+});
+
+carregarHistorico();
+
+} catch (e) {
+
+console.error("Erro ao limpar histórico", e);
+
+}
+
+}
+
+document
+.getElementById("cepInput")
+.addEventListener("keypress", function(e) {
+
+if (e.key === "Enter") {
+buscarCep();
+}
+
+});
+
+function aplicarModoAutomatico() {
+
+const hora = new Date().getHours();
+
+if (hora >= 18 || hora <= 6) {
+document.body.classList.add("dark");
+}
+
+}
+
+function usarLocalizacao() {
+
+if (!navigator.geolocation) {
+alert("Geolocalização não suportada");
+return;
+}
+
+navigator.geolocation.getCurrentPosition(async (pos) => {
+
+const lat = pos.coords.latitude;
+const lon = pos.coords.longitude;
+
+try {
+
+const res = await fetch(`/api/geoclimate/coordenadas?lat=${lat}&lon=${lon}`);
+
+if (!res.ok) {
+throw new Error("Erro ao buscar clima");
+}
+
+const data = await res.json();
+
+if (!data || !data.clima) {
+throw new Error("Resposta inválida da API");
+}
+
+preencherDados(data);
+
+} catch (err) {
+
+console.error(err);
+alert("Erro ao buscar clima da localização");
+
+}
+
+});
+
+}
+
+
+window.onload = function(){
+
+aplicarModoAutomatico();
+carregarHistorico();
+
+};

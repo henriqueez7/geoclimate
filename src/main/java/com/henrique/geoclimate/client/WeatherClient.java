@@ -1,65 +1,76 @@
 package com.henrique.geoclimate.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.henrique.geoclimate.dto.WeatherResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class WeatherClient {
 
-    @Value("${weather.api.url}")
-    private String weatherApiUrl;
-
     @Value("${weather.api.key}")
     private String apiKey;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public WeatherResponse buscarClima(String cidade, String estado) {
-        try {
-            URI uri = UriComponentsBuilder
-                    .fromUriString(weatherApiUrl)
-                    .queryParam("q", cidade + "," + estado + ",BR")
-                    .queryParam("appid", apiKey)
-                    .queryParam("units", "metric")
-                    .queryParam("lang", "pt_br")
-                    .build()
-                    .encode()
-                    .toUri();
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .GET()
-                    .build();
+        String url =
+                "https://api.openweathermap.org/data/2.5/weather?q="
+                        + cidade + "," + estado + ",BR"
+                        + "&appid=" + apiKey
+                        + "&units=metric"
+                        + "&lang=pt_br";
 
-            HttpResponse<String> response = httpClient.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
+        Map response = restTemplate.getForObject(url, Map.class);
 
-            if (response.statusCode() != 200) {
-                throw new RuntimeException("Erro ao consultar clima");
-            }
+        Map main = (Map) response.get("main");
 
-            JsonNode json = objectMapper.readTree(response.body());
+        List weatherList = (List) response.get("weather");
+        Map weather = (Map) weatherList.get(0);
 
-            return new WeatherResponse(
-                    json.get("main").get("temp").asDouble(),
-                    json.get("weather").get(0).get("description").asText(),
-                    json.get("main").get("humidity").asInt()
-            );
+        Double temperatura = ((Number) main.get("temp")).doubleValue();
+        Integer umidade = ((Number) main.get("humidity")).intValue();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao consultar clima", e);
-        }
+        String descricao = weather.get("description").toString();
+
+        return new WeatherResponse(
+                temperatura,
+                descricao,
+                umidade
+        );
     }
+
+    public WeatherResponse buscarClimaPorCoordenadas(double lat, double lon) {
+
+        String url =
+                "https://api.openweathermap.org/data/2.5/weather"
+                        + "?lat=" + lat
+                        + "&lon=" + lon
+                        + "&appid=" + apiKey
+                        + "&units=metric"
+                        + "&lang=pt_br";
+
+        Map response = restTemplate.getForObject(url, Map.class);
+
+        Map main = (Map) response.get("main");
+
+        List weatherList = (List) response.get("weather");
+        Map weather = (Map) weatherList.get(0);
+
+        Double temperatura = ((Number) main.get("temp")).doubleValue();
+        Integer umidade = ((Number) main.get("humidity")).intValue();
+
+        String descricao = weather.get("description").toString();
+
+        return new WeatherResponse(
+                temperatura,
+                descricao,
+                umidade
+        );
+    }
+
 }
